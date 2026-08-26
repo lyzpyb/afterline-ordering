@@ -102,7 +102,7 @@ export default function Home() {
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
           <a href="#top" className="flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">A</span>
-            <span className="text-sm font-semibold tracking-tight text-zinc-900">AfterLine</span>
+            <span className="text-sm font-semibold tracking-tight text-zinc-900">aiorderafterline</span>
           </a>
           <nav className="hidden items-center gap-6 text-sm font-medium text-zinc-600 md:flex">
             <a href="#preview" className="hover:text-zinc-900">Preview</a>
@@ -128,7 +128,7 @@ export default function Home() {
             Autonomous inventory intelligence for modern commerce
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-8 text-zinc-600">
-            AfterLine is an AI-native decision layer for retail supply chains. It senses probabilistic demand, optimizes multi-echelon inventory, simulates cash and service scenarios, and converts live signals into supplier-ready replenishment decisions.
+            aiorderafterline is an AI-native decision layer for retail supply chains. It senses probabilistic demand, optimizes multi-echelon inventory, simulates cash and service scenarios, and converts live signals into supplier-ready replenishment decisions.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a
@@ -155,7 +155,7 @@ export default function Home() {
                 <span className="h-3 w-3 rounded-full bg-amber-400" />
                 <span className="h-3 w-3 rounded-full bg-emerald-400" />
               </div>
-              <span className="text-xs font-medium text-zinc-500">AfterLine · Ordering dashboard</span>
+              <span className="text-xs font-medium text-zinc-500">aiorderafterline · Ordering dashboard</span>
             </div>
             <div className="grid gap-4 pt-5 sm:grid-cols-3">
               <div className="rounded-2xl bg-zinc-50 p-4">
@@ -372,7 +372,7 @@ export default function Home() {
 
       <footer className="border-t border-zinc-200 bg-white py-10">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-6 text-sm text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} AfterLine</span>
+          <span>© {new Date().getFullYear()} aiorderafterline</span>
           <a href="mailto:hello@afterline.shop" className="font-medium text-blue-700 hover:underline">
             hello@afterline.shop
           </a>
