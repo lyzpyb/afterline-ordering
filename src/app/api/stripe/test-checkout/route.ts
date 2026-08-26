@@ -13,46 +13,77 @@ function getAppUrl(req: Request) {
   return new URL(req.url).origin;
 }
 
+const allowedOrigins = new Set([
+  "https://afterline.ai",
+  "https://www.afterline.ai",
+  "http://localhost:5173",
+]);
+
+function corsHeaders(req: Request) {
+  const origin = req.headers.get("origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": allowedOrigins.has(origin) ? origin : "https://afterline.ai",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "86400",
+  };
+}
+
+function jsonResponse(req: Request, body: unknown, status = 200) {
+  return NextResponse.json(body, { status, headers: corsHeaders(req) });
+}
+
+export async function OPTIONS(req: Request) {
+  return new NextResponse(null, { status: 204, headers: corsHeaders(req) });
+}
+
 export async function POST(req: Request) {
   const stripe = getStripeTestClient();
 
   if (!stripe) {
-    return NextResponse.json(
+    return jsonResponse(
+      req,
       { error: "Stripe test mode is not configured." },
-      { status: 503 },
+      503,
     );
   }
 
-  let payload: { planId?: string };
+  let payload: { planId?: string; email?: string };
 
   try {
     payload = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+    return jsonResponse(req, { error: "Invalid request." }, 400);
   }
 
   const plan = getTestPlan(payload.planId ?? "");
 
   if (!plan) {
-    return NextResponse.json({ error: "Unknown test plan." }, { status: 400 });
+    return jsonResponse(req, { error: "Unknown test plan." }, 400);
   }
 
   const appUrl = getAppUrl(req);
   const isOneTime = plan.interval === "once";
+  const email = (payload.email ?? "").trim();
   const recurring =
     plan.interval === "month"
       ? { interval: "month" as const }
       : plan.interval === "year"
         ? { interval: "year" as const }
         : undefined;
+  const origin = req.headers.get("origin") ?? "";
+  const source = allowedOrigins.has(origin) && origin !== "http://localhost:5173"
+    ? "afterline-pricing"
+    : "stripe-test-page";
   const metadata = {
     plan: plan.id,
-    source: "stripe-test-page",
+    source,
   };
 
   try {
     const session = await stripe.checkout.sessions.create({
       mode: isOneTime ? "payment" : "subscription",
+      ...(email ? { customer_email: email } : {}),
       client_reference_id: `stripe-test-${plan.id}-${Date.now()}`,
       line_items: [
         {
@@ -79,12 +110,13 @@ export async function POST(req: Request) {
       billing_address_collection: "auto",
     });
 
-    return NextResponse.json({ url: session.url });
+    return jsonResponse(req, { url: session.url });
   } catch (error) {
     console.error("Stripe test checkout session creation failed", error);
-    return NextResponse.json(
+    return jsonResponse(
+      req,
       { error: "Could not create a test checkout session." },
-      { status: 500 },
+      500,
     );
   }
 }
