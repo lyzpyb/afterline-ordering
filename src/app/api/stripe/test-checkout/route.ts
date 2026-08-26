@@ -19,6 +19,12 @@ const allowedOrigins = new Set([
   "http://localhost:5173",
 ]);
 
+const allowedReturnOrigins = new Set([
+  "https://afterline.ai",
+  "https://www.afterline.ai",
+  "http://localhost:5173",
+]);
+
 function corsHeaders(req: Request) {
   const origin = req.headers.get("origin") ?? "";
   return {
@@ -37,6 +43,26 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/.test(email);
 }
 
+function getPaymentSuccessUrl(returnUrl?: string, appUrl?: string) {
+  if (returnUrl) {
+    try {
+      const parsed = new URL(returnUrl);
+      const isLocalHttp = parsed.protocol === "http:" && parsed.host === "localhost:5173";
+
+      if (parsed.protocol === "https:" || isLocalHttp) {
+        if (allowedReturnOrigins.has(parsed.origin)) {
+          parsed.searchParams.set("stripe_payment", "success");
+          return parsed.href;
+        }
+      }
+    } catch {
+      // Ignore malformed return URLs and use the normal success page.
+    }
+  }
+
+  return `${appUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
+}
+
 export async function OPTIONS(req: Request) {
   return new NextResponse(null, { status: 204, headers: corsHeaders(req) });
 }
@@ -52,7 +78,7 @@ export async function POST(req: Request) {
     );
   }
 
-  let payload: { planId?: string; email?: string };
+  let payload: { planId?: string; email?: string; returnUrl?: string };
 
   try {
     payload = await req.json();
@@ -84,6 +110,7 @@ export async function POST(req: Request) {
     plan: plan.id,
     source,
   };
+  const successUrl = getPaymentSuccessUrl(payload.returnUrl, appUrl);
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -109,7 +136,7 @@ export async function POST(req: Request) {
         ? { payment_intent_data: { metadata } }
         : { subscription_data: { metadata } }),
       metadata,
-      success_url: `${appUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: successUrl,
       cancel_url: `${appUrl}/stripe-test`,
       allow_promotion_codes: true,
       billing_address_collection: "auto",
