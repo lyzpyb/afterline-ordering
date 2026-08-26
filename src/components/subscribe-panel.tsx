@@ -1,40 +1,49 @@
 "use client";
 
-import { useMemo, useState } from "react";
-
-type Plan = "starter" | "growth" | "scale";
-
-const plans: Record<Plan, { label: string; price: string; seats: string }> = {
-  starter: { label: "Starter", price: "$19 / month", seats: "1 store · 3 users" },
-  growth: { label: "Growth", price: "$49 / month", seats: "5 stores · 15 users" },
-  scale: { label: "Scale", price: "$99 / month", seats: "Unlimited stores · 50 users" },
-};
+import { useState } from "react";
+import { plans, type PlanId } from "@/lib/plans";
 
 const contactEmail = "hello@afterline.shop";
 
 export function SubscribePanel() {
-  const [plan, setPlan] = useState<Plan>("growth");
+  const [planId, setPlanId] = useState<PlanId>("growth");
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [message, setMessage] = useState("");
-  const [status, setStatus] = useState<"idle" | "ready" | "invalid">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
 
-  const mailto = useMemo(() => {
-    const subject = encodeURIComponent(`AfterLine subscription request — ${plans[plan].label}`);
-    const body = encodeURIComponent(
-      `Hello AfterLine team,\n\nI would like to subscribe to the ${plans[plan].label} plan.\n\nWork email: ${email}\nCompany / store: ${company}\nTeam size: ${plans[plan].seats}\n\nNotes:\n${message}\n\nPlease help me create the account and confirm the subscription by email.\n\nThank you,\n${email}`,
-    );
-    return `mailto:${contactEmail}?subject=${subject}&body=${body}`;
-  }, [company, email, message, plan]);
+  const selectedPlan = plans.find((plan) => plan.id === planId)!;
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!email.trim() || !company.trim()) {
-      setStatus("invalid");
-      return;
+    setStatus("loading");
+    setError(null);
+
+    try {
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId, email, company, message }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.url) {
+        setStatus("error");
+        setError(
+          data.error === "Stripe is not configured yet."
+            ? "Stripe is not configured yet. Please contact us by email and we'll complete your subscription manually."
+            : data.error ?? "Unable to start checkout. Please try again.",
+        );
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch {
+      setStatus("error");
+      setError("Network error. Please check your connection and try again.");
     }
-    setStatus("ready");
-    window.location.href = mailto;
   }
 
   return (
@@ -43,10 +52,10 @@ export function SubscribePanel() {
         <div className="flex flex-col gap-2">
           <p className="text-sm font-semibold text-blue-700">Get started</p>
           <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
-            Create your account, then confirm by email
+            Create your account and subscribe securely
           </h2>
           <p className="max-w-2xl text-sm leading-6 text-zinc-600">
-            Choose a plan, submit your details, and we&apos;ll send the subscription confirmation and account setup link to your work email.
+            Choose a plan, add your details, and complete payment through Stripe. You can also email us if you prefer manual onboarding.
           </p>
         </div>
 
@@ -54,23 +63,22 @@ export function SubscribePanel() {
           <fieldset className="sm:col-span-2">
             <legend className="text-sm font-medium text-zinc-700">Plan</legend>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              {(Object.keys(plans) as Plan[]).map((key) => {
-                const item = plans[key];
-                const selected = plan === key;
+              {plans.map((plan) => {
+                const selected = plan.id === planId;
                 return (
                   <button
-                    key={key}
+                    key={plan.id}
                     type="button"
-                    onClick={() => setPlan(key)}
+                    onClick={() => setPlanId(plan.id)}
                     className={`rounded-2xl border p-4 text-left transition ${
                       selected
                         ? "border-blue-600 bg-blue-50 ring-2 ring-blue-100"
                         : "border-zinc-200 bg-white hover:border-blue-300"
                     }`}
                   >
-                    <span className="block text-sm font-semibold text-zinc-900">{item.label}</span>
-                    <span className="mt-1 block text-sm text-zinc-600">{item.price}</span>
-                    <span className="mt-2 block text-xs text-zinc-500">{item.seats}</span>
+                    <span className="block text-sm font-semibold text-zinc-900">{plan.name}</span>
+                    <span className="mt-1 block text-sm text-zinc-600">{plan.priceLabel}</span>
+                    <span className="mt-2 block text-xs text-zinc-500">{plan.description}</span>
                   </button>
                 );
               })}
@@ -115,9 +123,12 @@ export function SubscribePanel() {
           <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row sm:items-center">
             <button
               type="submit"
-              className="inline-flex h-12 items-center justify-center rounded-full bg-blue-600 px-7 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+              disabled={status === "loading"}
+              className="inline-flex h-12 items-center justify-center rounded-full bg-blue-600 px-7 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Create account &amp; email subscription request
+              {status === "loading"
+                ? "Creating secure checkout..."
+                : `Subscribe to ${selectedPlan.name}`}
             </button>
             <a
               href={`mailto:${contactEmail}`}
@@ -127,16 +138,13 @@ export function SubscribePanel() {
             </a>
           </div>
 
-          {status === "invalid" && (
-            <p className="text-sm text-red-600 sm:col-span-2">
-              Please add your work email and company name.
-            </p>
+          {status === "error" && error && (
+            <p className="text-sm text-red-600 sm:col-span-2">{error}</p>
           )}
-          {status === "ready" && (
-            <p className="text-sm text-emerald-700 sm:col-span-2">
-              Your email draft is ready. Send it to finish the subscription request.
-            </p>
-          )}
+
+          <p className="text-xs text-zinc-500 sm:col-span-2">
+            Payments are processed securely by Stripe. You can cancel or manage your subscription at any time.
+          </p>
         </form>
       </div>
     </section>

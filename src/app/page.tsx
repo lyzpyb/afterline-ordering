@@ -1,4 +1,5 @@
 import { SubscribePanel } from "@/components/subscribe-panel";
+import { plans } from "@/lib/plans";
 
 const features = [
   {
@@ -50,50 +51,7 @@ const intelligenceStack = [
   },
 ];
 
-const plans = [
-  {
-    name: "Starter",
-    price: "$19",
-    period: "/ month",
-    description: "For single-store teams starting with intelligent ordering.",
-    features: [
-      "1 store",
-      "3 users",
-      "Demand forecasts",
-      "Replenishment suggestions",
-      "Email support",
-    ],
-  },
-  {
-    name: "Growth",
-    price: "$49",
-    period: "/ month",
-    description: "For growing chains that need automation across locations.",
-    features: [
-      "5 stores",
-      "15 users",
-      "Closed-loop replenishment rules",
-      "Supplier scorecards",
-      "Approval workflow",
-      "Priority email support",
-    ],
-    featured: true,
-  },
-  {
-    name: "Scale",
-    price: "$99",
-    period: "/ month",
-    description: "For multi-store operators and distributors.",
-    features: [
-      "Unlimited stores",
-      "50 users",
-      "Custom forecasting models",
-      "Supplier collaboration",
-      "API access",
-      "Dedicated onboarding",
-    ],
-  },
-];
+const planCards = plans;
 
 export default function Home() {
   return (
@@ -326,7 +284,7 @@ export default function Home() {
             </p>
           </div>
           <div className="mt-10 grid gap-6 lg:grid-cols-3">
-            {plans.map((plan) => (
+            {planCards.map((plan) => (
               <article
                 key={plan.name}
                 className={`relative flex flex-col rounded-3xl border p-7 ${
@@ -341,8 +299,7 @@ export default function Home() {
                 <h3 className="text-lg font-semibold text-zinc-900">{plan.name}</h3>
                 <p className="mt-2 text-sm text-zinc-600">{plan.description}</p>
                 <p className="mt-6">
-                  <span className="text-4xl font-semibold tracking-tight text-zinc-900">{plan.price}</span>
-                  <span className="text-sm text-zinc-500">{plan.period}</span>
+                  <span className="text-4xl font-semibold tracking-tight text-zinc-900">{plan.priceLabel}</span>
                 </p>
                 <ul className="mt-6 flex-1 space-y-3 text-sm text-zinc-700">
                   {plan.features.map((item) => (
