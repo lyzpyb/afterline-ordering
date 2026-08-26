@@ -13,9 +13,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AfterLine — Intelligent Ordering System",
+  metadataBase: new URL("https://aiorderafterline.shop"),
+  title: "AfterLine — AI-Native Intelligent Ordering System",
   description:
-    "Preview AfterLine, an intelligent ordering system for inventory forecasting, replenishment automation, and supplier coordination. Subscribe to get started.",
+    "AfterLine combines probabilistic demand sensing, multi-echelon inventory optimization, supplier risk intelligence, and closed-loop replenishment automation for modern retail teams.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "AfterLine — AI-Native Intelligent Ordering System",
+    description:
+      "Turn demand uncertainty into supplier-ready ordering decisions with AI-native forecasting, optimization, and automation.",
+    url: "https://aiorderafterline.shop",
+    siteName: "AfterLine",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

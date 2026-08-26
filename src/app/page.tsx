@@ -2,28 +2,28 @@ import { SubscribePanel } from "@/components/subscribe-panel";
 
 const features = [
   {
-    title: "Demand forecasting",
-    description: "Estimate tomorrow’s orders from sales history, seasonality, promotions, and stock on hand.",
+    title: "Probabilistic demand sensing",
+    description: "Model demand distributions—not single-point guesses—across sales, seasonality, promotions, pricing, weather, and local events.",
   },
   {
-    title: "Auto replenishment",
-    description: "Generate purchase suggestions automatically and send them to the right supplier at the right time.",
+    title: "Closed-loop replenishment",
+    description: "Convert forecasts into order recommendations with safety stock, MOQs, shelf life, cash limits, and service-level trade-offs.",
   },
   {
-    title: "Supplier coordination",
-    description: "Track quotations, delivery dates, and purchase orders in one shared workspace.",
+    title: "Supplier risk intelligence",
+    description: "Score suppliers on fill rate, lead-time variance, price stability, and reliability to reduce silent operational risk.",
   },
   {
-    title: "Inventory health",
-    description: "Spot overstock, understock, and slow movers before they become costly.",
+    title: "Multi-echelon optimization",
+    description: "Balance stock across DCs, stores, and channels while reducing trapped cash and missed sales.",
   },
   {
-    title: "Team workflow",
-    description: "Let store managers approve suggestions while finance keeps spending under control.",
+    title: "Scenario simulation",
+    description: "Compare service level, inventory value, and cash-flow outcomes before committing to a purchase cycle.",
   },
   {
-    title: "Simple onboarding",
-    description: "Import your SKU list, connect suppliers, and go live without a data team.",
+    title: "Continuous learning",
+    description: "Every order outcome feeds back into the model, so the system adapts as demand shifts and suppliers change.",
   },
 ];
 
@@ -49,7 +49,7 @@ const plans = [
     features: [
       "5 stores",
       "15 users",
-      "Auto replenishment rules",
+      "Closed-loop replenishment rules",
       "Supplier scorecards",
       "Approval workflow",
       "Priority email support",
@@ -102,10 +102,10 @@ export default function Home() {
             Intelligent ordering system
           </p>
           <h1 className="mt-6 text-4xl font-semibold leading-[1.1] tracking-tight text-zinc-900 sm:text-5xl">
-            Order the right stock, before you need it
+            Autonomous inventory intelligence for modern commerce
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-8 text-zinc-600">
-            AfterLine turns sales history, inventory levels, and supplier lead times into automatic replenishment suggestions. Preview the system, choose a subscription, and request access by email.
+            AfterLine is an AI-native decision layer for retail supply chains. It senses probabilistic demand, optimizes multi-echelon inventory, simulates cash and service scenarios, and converts live signals into supplier-ready replenishment decisions.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a
@@ -180,9 +180,9 @@ export default function Home() {
         <div className="mx-auto w-full max-w-6xl px-6">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold text-blue-700">Product preview</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">See how AfterLine works</h2>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">A guided look at the intelligent ordering loop</h2>
             <p className="mt-4 text-base leading-7 text-zinc-600">
-              This preview shows the core ordering workflow: forecast demand, review replenishment suggestions, and coordinate with suppliers.
+              The product preview demonstrates the closed loop: sense demand, optimize inventory, evaluate supplier risk, and generate auditable purchase recommendations.
             </p>
           </div>
 
@@ -263,7 +263,7 @@ export default function Home() {
       <section id="features" className="mx-auto w-full max-w-6xl px-6 py-20">
         <div className="max-w-2xl">
           <p className="text-sm font-semibold text-blue-700">Features</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">Built for practical ordering teams</h2>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">Enterprise-grade intelligence, without a data team</h2>
         </div>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
@@ -279,9 +279,9 @@ export default function Home() {
         <div className="mx-auto w-full max-w-6xl px-6">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold text-blue-700">Pricing</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">Simple subscription options</h2>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">Subscribe to intelligent ordering</h2>
             <p className="mt-4 text-base text-zinc-600">
-              Start with a monthly subscription. Upgrade, downgrade, or cancel at any time.
+              Begin with the modules you need, then expand as your stores, suppliers, and data mature.
             </p>
           </div>
           <div className="mt-10 grid gap-6 lg:grid-cols-3">
