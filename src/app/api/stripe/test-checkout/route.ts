@@ -33,6 +33,10 @@ function jsonResponse(req: Request, body: unknown, status = 200) {
   return NextResponse.json(body, { status, headers: corsHeaders(req) });
 }
 
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/.test(email);
+}
+
 export async function OPTIONS(req: Request) {
   return new NextResponse(null, { status: 204, headers: corsHeaders(req) });
 }
@@ -65,6 +69,7 @@ export async function POST(req: Request) {
   const appUrl = getAppUrl(req);
   const isOneTime = plan.interval === "once";
   const email = (payload.email ?? "").trim();
+  const validEmail = isValidEmail(email) ? email : "";
   const recurring =
     plan.interval === "month"
       ? { interval: "month" as const }
@@ -83,7 +88,7 @@ export async function POST(req: Request) {
   try {
     const session = await stripe.checkout.sessions.create({
       mode: isOneTime ? "payment" : "subscription",
-      ...(email ? { customer_email: email } : {}),
+      ...(validEmail ? { customer_email: validEmail } : {}),
       client_reference_id: `stripe-test-${plan.id}-${Date.now()}`,
       line_items: [
         {
