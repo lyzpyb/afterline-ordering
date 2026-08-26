@@ -7,6 +7,7 @@ import {
   grantSubscriptionAccess,
   grantWeeklyAccessPass,
   resolveUserByEmail,
+  resolveUserById,
   revokeSubscriptionAccess,
 } from "@/lib/membership";
 
@@ -85,7 +86,8 @@ export async function POST(req: Request) {
       }
 
       const email = session.customer_details?.email ?? null;
-      const userId = await resolveUserByEmail(email);
+      const userId = await resolveUserById(session.metadata?.userId)
+        ?? await resolveUserByEmail(email);
 
       if (!userId) {
         console.warn("Stripe checkout completed without a matching account", {

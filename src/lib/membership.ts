@@ -60,6 +60,28 @@ export async function resolveUserByEmail(email: string | null | undefined) {
   return typeof data === "string" ? data : null;
 }
 
+export async function resolveUserById(userId: string | null | undefined) {
+  const normalized = userId?.trim();
+
+  if (!normalized) {
+    return null;
+  }
+
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase.auth.admin.getUserById(normalized);
+
+  if (error) {
+    return null;
+  }
+
+  return data?.user?.id ?? null;
+}
+
 function timestampFromStripe(value: number | null | undefined) {
   return value ? new Date(value * 1000).toISOString() : null;
 }

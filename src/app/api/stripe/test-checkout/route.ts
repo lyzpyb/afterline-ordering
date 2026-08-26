@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getTestPlan } from "@/lib/test-plans";
 import { getStripeTestClient } from "@/lib/stripe";
+import { getSupabaseAdminClient } from "@/lib/membership";
 
 function getAppUrl(req: Request) {
   const forwardedHost = req.headers.get("x-forwarded-host");
@@ -63,6 +64,28 @@ function getPaymentSuccessUrl(returnUrl?: string, appUrl?: string) {
   return `${appUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
 }
 
+async function getUserIdFromAccessToken(accessToken: string | undefined) {
+  const token = accessToken?.trim();
+
+  if (!token) {
+    return null;
+  }
+
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    throw new Error("Supabase is not configured.");
+  }
+
+  const { data, error } = await supabase.auth.getUser(token);
+
+  if (error || !data.user?.id) {
+    throw new Error("Invalid AfterLine session.");
+  }
+
+  return data.user.id;
+}
+
 export async function OPTIONS(req: Request) {
   return new NextResponse(null, { status: 204, headers: corsHeaders(req) });
 }
@@ -78,7 +101,12 @@ export async function POST(req: Request) {
     );
   }
 
-  let payload: { planId?: string; email?: string; returnUrl?: string };
+  let payload: {
+    planId?: string;
+    email?: string;
+    returnUrl?: string;
+    accessToken?: string;
+  };
 
   try {
     payload = await req.json();
@@ -90,6 +118,16 @@ export async function POST(req: Request) {
 
   if (!plan) {
     return jsonResponse(req, { error: "Unknown test plan." }, 400);
+  }
+
+  let accountUserId: string | null = null;
+
+  if (payload.accessToken) {
+    try {
+      accountUserId = await getUserIdFromAccessToken(payload.accessToken);
+    } catch {
+      return jsonResponse(req, { error: "Please sign in again." }, 401);
+    }
   }
 
   const appUrl = getAppUrl(req);
@@ -109,6 +147,7 @@ export async function POST(req: Request) {
   const metadata = {
     plan: plan.id,
     source,
+    ...(accountUserId ? { userId: accountUserId } : {}),
   };
   const successUrl = getPaymentSuccessUrl(payload.returnUrl, appUrl);
 
