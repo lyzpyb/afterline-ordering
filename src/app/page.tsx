@@ -27,6 +27,29 @@ const features = [
   },
 ];
 
+const intelligenceStack = [
+  {
+    title: "Causal demand sensing",
+    description:
+      "Separate true demand drivers from noise by analyzing promotions, pricing actions, holidays, weather, channel mix, and local events.",
+  },
+  {
+    title: "Stochastic inventory optimization",
+    description:
+      "Use demand distributions—not averages—to set safety stock, service levels, order timing, and inventory ceilings for each SKU-location pair.",
+  },
+  {
+    title: "Policy simulation",
+    description:
+      "Test replenishment policies against cash constraints, supplier reliability, shelf life, and target service levels before execution.",
+  },
+  {
+    title: "Closed-loop orchestration",
+    description:
+      "Compare recommended orders with actual sales and delivery outcomes, then continuously refine forecasts, risks, and ordering rules.",
+  },
+];
+
 const plans = [
   {
     name: "Starter",
@@ -257,6 +280,24 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-6 pt-20">
+        <div className="max-w-2xl">
+          <p className="text-sm font-semibold text-blue-700">Intelligence stack</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">Advanced ordering intelligence</h2>
+          <p className="mt-4 text-base leading-7 text-zinc-600">
+            AfterLine is designed for uncertain, fast-moving retail environments. It combines statistical forecasting, optimization, and operational guardrails so teams can act with confidence.
+          </p>
+        </div>
+        <div className="mt-10 grid gap-5 sm:grid-cols-2">
+          {intelligenceStack.map((item) => (
+            <article key={item.title} className="rounded-3xl border border-zinc-200 bg-white p-7">
+              <h3 className="text-lg font-semibold text-zinc-900">{item.title}</h3>
+              <p className="mt-3 text-sm leading-7 text-zinc-600">{item.description}</p>
+            </article>
+          ))}
         </div>
       </section>
 
