@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://aiorderafterline.shop"),
   title: "aiorderafterline",
   description:
-    "AfterLine combines probabilistic demand sensing, multi-echelon inventory optimization, supplier risk intelligence, and closed-loop replenishment automation for modern retail teams.",
+    "aiorder-afterline combines probabilistic demand sensing, multi-echelon inventory optimization, supplier risk intelligence, and closed-loop replenishment automation for modern retail teams.",
   alternates: {
     canonical: "/",
   },

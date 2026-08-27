@@ -246,7 +246,7 @@ export default function Home() {
           <p className="text-sm font-semibold text-blue-700">Intelligence stack</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">Advanced ordering intelligence</h2>
           <p className="mt-4 text-base leading-7 text-zinc-600">
-            AfterLine is designed for uncertain, fast-moving retail environments. It combines statistical forecasting, optimization, and operational guardrails so teams can act with confidence.
+            aiorder-afterline is designed for uncertain, fast-moving retail environments. It combines statistical forecasting, optimization, and operational guardrails so teams can act with confidence.
           </p>
         </div>
         <div className="mt-10 grid gap-5 sm:grid-cols-2">

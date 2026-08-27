@@ -42,10 +42,10 @@ export default function StripeTestPage() {
             Stripe integration test
           </p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-zinc-900">
-            AfterLine Premium pricing mirror
+            aiorder-afterline Premium pricing mirror
           </h1>
           <p className="mt-4 text-base leading-7 text-zinc-600">
-            This page mirrors the current AfterLine Premium plans and prices for
+            This page mirrors the current aiorder-afterline Premium plans and prices for
             Stripe test-mode checkout. It does not grant production access and
             is not connected to live billing.
           </p>

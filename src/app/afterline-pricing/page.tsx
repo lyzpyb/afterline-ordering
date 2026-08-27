@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "AfterLine Pricing | aiorderafterline",
-  description: "Embedded AfterLine subscription pricing page.",
+  title: "aiorder-afterline Pricing | aiorderafterline",
+  description: "Embedded aiorder-afterline subscription pricing page.",
 };
 
 export default function AfterlinePricingPage() {
@@ -13,10 +13,10 @@ export default function AfterlinePricingPage() {
               Embedded subscription page
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">
-              AfterLine Pricing
+              aiorder-afterline Pricing
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-zinc-600">
-              The live AfterLine pricing page is embedded below. If login or
+              The live aiorder-afterline pricing page is embedded below. If login or
               checkout is blocked by the browser, open it in a new tab.
             </p>
           </div>
@@ -33,7 +33,7 @@ export default function AfterlinePricingPage() {
 
       <iframe
         src="https://afterline.ai/pricing"
-        title="AfterLine Pricing"
+        title="aiorder-afterline Pricing"
         className="min-h-[85vh] w-full flex-1 border-0"
         loading="lazy"
       />
