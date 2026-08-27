@@ -116,6 +116,41 @@ async function upsertCustomer(
   customerId: string,
   email: string | null,
 ) {
+  const { data: currentCustomer, error: currentCustomerError } = await supabase
+    .from("billing_customers")
+    .select("creem_customer_id,email")
+    .eq("user_id", userId)
+    .eq("mode", BILLING_MODE)
+    .maybeSingle();
+
+  if (currentCustomerError) {
+    throw new Error(
+      `Could not load the current billing customer: ${currentCustomerError.message}`,
+    );
+  }
+
+  if (
+    currentCustomer?.creem_customer_id &&
+    currentCustomer.creem_customer_id !== customerId
+  ) {
+    const { count: linkedSubscriptions, error: subscriptionCountError } = await supabase
+      .from("billing_subscriptions")
+      .select("creem_subscription_id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("creem_customer_id", currentCustomer.creem_customer_id)
+      .eq("mode", BILLING_MODE);
+
+    if (subscriptionCountError) {
+      throw new Error(`Could not check the existing subscriptions: ${subscriptionCountError.message}`);
+    }
+
+    if ((linkedSubscriptions ?? 0) > 0) {
+      // Keep the original customer when historical subscriptions still point to it.
+      // This avoids a foreign-key conflict while the checkout flow prefers reuse.
+      return currentCustomer.creem_customer_id;
+    }
+  }
+
   const { data: providerCustomer, error: providerError } = await supabase
     .from("billing_customers")
     .select("user_id")
@@ -145,6 +180,8 @@ async function upsertCustomer(
   if (error) {
     throw new Error(`Could not save the billing customer: ${error.message}`);
   }
+
+  return customerId;
 }
 
 async function grantCredits(
@@ -293,7 +330,7 @@ export async function grantSubscriptionAccess(options: {
     options.eventCreatedAt,
     options.payload,
   );
-  await upsertCustomer(
+  const effectiveCustomerId = await upsertCustomer(
     supabase,
     options.userId,
     options.customerId,
@@ -307,7 +344,7 @@ export async function grantSubscriptionAccess(options: {
     {
       creem_subscription_id: options.subscriptionId,
       user_id: options.userId,
-      creem_customer_id: options.customerId,
+      creem_customer_id: effectiveCustomerId,
       mode: BILLING_MODE,
       creem_product_id: PRODUCT_IDS[options.planId],
       plan_key: options.planId,
@@ -385,7 +422,7 @@ export async function revokeSubscriptionAccess(options: {
     options.eventCreatedAt,
     options.payload,
   );
-  await upsertCustomer(
+  const effectiveCustomerId = await upsertCustomer(
     supabase,
     options.userId,
     options.customerId,
@@ -400,7 +437,7 @@ export async function revokeSubscriptionAccess(options: {
       {
         creem_subscription_id: options.subscriptionId,
         user_id: options.userId,
-        creem_customer_id: options.customerId,
+        creem_customer_id: effectiveCustomerId,
         mode: BILLING_MODE,
         creem_product_id: "stripe-test-unknown",
         plan_key: "monthly",

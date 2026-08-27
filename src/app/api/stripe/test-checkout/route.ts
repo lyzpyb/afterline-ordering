@@ -121,6 +121,7 @@ export async function POST(req: Request) {
   }
 
   let accountUserId: string | null = null;
+  let existingCustomerId: string | null = null;
 
   if (payload.accessToken) {
     try {
@@ -128,6 +129,28 @@ export async function POST(req: Request) {
     } catch {
       return jsonResponse(req, { error: "Please sign in again." }, 401);
     }
+  }
+
+  if (accountUserId) {
+    const supabase = getSupabaseAdminClient();
+
+    if (!supabase) {
+      return jsonResponse(req, { error: "Membership storage is not configured." }, 503);
+    }
+
+    const { data: existingCustomer, error: existingCustomerError } = await supabase
+      .from("billing_customers")
+      .select("creem_customer_id")
+      .eq("user_id", accountUserId)
+      .eq("mode", "test")
+      .maybeSingle();
+
+    if (existingCustomerError) {
+      console.error("Could not load the existing Stripe customer", existingCustomerError);
+      return jsonResponse(req, { error: "Could not load your payment profile." }, 500);
+    }
+
+    existingCustomerId = existingCustomer?.creem_customer_id ?? null;
   }
 
   const appUrl = getAppUrl(req);
@@ -154,7 +177,11 @@ export async function POST(req: Request) {
   try {
     const session = await stripe.checkout.sessions.create({
       mode: isOneTime ? "payment" : "subscription",
-      ...(validEmail ? { customer_email: validEmail } : {}),
+      ...(existingCustomerId
+        ? { customer: existingCustomerId }
+        : validEmail
+          ? { customer_email: validEmail }
+          : {}),
       client_reference_id: `stripe-test-${plan.id}-${Date.now()}`,
       line_items: [
         {

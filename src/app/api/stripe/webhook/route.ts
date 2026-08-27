@@ -48,6 +48,31 @@ async function getUserIdForCustomer(customerId: string | null) {
   return data ?? null;
 }
 
+async function getUserIdForSubscription(subscriptionId: string | null) {
+  if (!subscriptionId) {
+    return null;
+  }
+
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("billing_subscriptions")
+    .select("user_id")
+    .eq("creem_subscription_id", subscriptionId)
+    .eq("mode", "test")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Could not find the billing subscription: ${error.message}`);
+  }
+
+  return data?.user_id ?? null;
+}
+
 export async function POST(req: Request) {
   const stripe = getStripeClient();
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -145,10 +170,13 @@ export async function POST(req: Request) {
     case "invoice.payment_succeeded": {
       const invoice = event.data.object;
       const customerId = customerIdFrom(invoice.customer);
-      const customer = await getUserIdForCustomer(customerId);
       const subscriptionId = invoice.parent?.subscription_details
         ? stripeIdFrom(invoice.parent.subscription_details.subscription)
         : null;
+      const subscriptionUserId = await getUserIdForSubscription(subscriptionId);
+      const customer = subscriptionUserId
+        ? { user_id: subscriptionUserId, email: null }
+        : await getUserIdForCustomer(customerId);
 
       if (!customer?.user_id || !subscriptionId || !customerId) {
         console.warn("Stripe invoice succeeded without a matching subscription", {
@@ -187,7 +215,10 @@ export async function POST(req: Request) {
     case "customer.subscription.deleted": {
       const subscription = event.data.object;
       const customerId = customerIdFrom(subscription.customer);
-      const customer = await getUserIdForCustomer(customerId);
+      const subscriptionUserId = await getUserIdForSubscription(subscription.id);
+      const customer = subscriptionUserId
+        ? { user_id: subscriptionUserId, email: null }
+        : await getUserIdForCustomer(customerId);
 
       if (!customer?.user_id || !customerId) {
         console.warn("Stripe subscription deleted without a matching customer", {
