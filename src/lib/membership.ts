@@ -1,6 +1,14 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-export const BILLING_MODE = "test";
+export type BillingMode = "test" | "production";
+
+export function getBillingMode(): BillingMode {
+  return process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_")
+    ? "production"
+    : "test";
+}
+
+export const BILLING_MODE = getBillingMode();
 export const PREMIUM_ENTITLEMENT = "premium_story_access";
 
 type PlanId = "weekly" | "monthly" | "annual";
@@ -10,9 +18,15 @@ const CREDIT_GRANTS: Record<Exclude<PlanId, "weekly">, number> = {
   annual: 20000,
 };
 
-const PRODUCT_IDS: Record<Exclude<PlanId, "weekly">, string> = {
-  monthly: "stripe-test-monthly",
-  annual: "stripe-test-annual",
+const PRODUCT_IDS: Record<BillingMode, Record<Exclude<PlanId, "weekly">, string>> = {
+  test: {
+    monthly: "stripe-test-monthly",
+    annual: "stripe-test-annual",
+  },
+  production: {
+    monthly: "stripe-aiorder-monthly",
+    annual: "stripe-aiorder-annual",
+  },
 };
 
 let cachedClient: SupabaseClient | null = null;
@@ -346,7 +360,7 @@ export async function grantSubscriptionAccess(options: {
       user_id: options.userId,
       creem_customer_id: effectiveCustomerId,
       mode: BILLING_MODE,
-      creem_product_id: PRODUCT_IDS[options.planId],
+      creem_product_id: PRODUCT_IDS[BILLING_MODE][options.planId],
       plan_key: options.planId,
       status: "active",
       current_period_start_at: periodStart,
@@ -439,7 +453,9 @@ export async function revokeSubscriptionAccess(options: {
         user_id: options.userId,
         creem_customer_id: effectiveCustomerId,
         mode: BILLING_MODE,
-        creem_product_id: "stripe-test-unknown",
+        creem_product_id: BILLING_MODE === "production"
+          ? "stripe-aiorder-unknown"
+          : "stripe-test-unknown",
         plan_key: "monthly",
         status: "canceled",
         canceled_at: now,

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripeClient } from "@/lib/stripe";
 import {
+  BILLING_MODE,
   extendSubscriptionAccess,
   getSupabaseAdminClient,
   grantSubscriptionAccess,
@@ -38,7 +39,7 @@ async function getUserIdForCustomer(customerId: string | null) {
     .from("billing_customers")
     .select("user_id,email")
     .eq("creem_customer_id", customerId)
-    .eq("mode", "test")
+    .eq("mode", BILLING_MODE)
     .maybeSingle();
 
   if (error) {
@@ -63,7 +64,7 @@ async function getUserIdForSubscription(subscriptionId: string | null) {
     .from("billing_subscriptions")
     .select("user_id")
     .eq("creem_subscription_id", subscriptionId)
-    .eq("mode", "test")
+    .eq("mode", BILLING_MODE)
     .maybeSingle();
 
   if (error) {

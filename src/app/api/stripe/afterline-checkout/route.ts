@@ -8,5 +8,5 @@ export async function OPTIONS(req: Request) {
 }
 
 export async function POST(req: Request) {
-  return createAfterLineCheckout(req, { requireTestKey: true });
+  return createAfterLineCheckout(req);
 }

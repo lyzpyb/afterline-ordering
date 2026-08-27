@@ -16,7 +16,7 @@ export type TestPlan = {
 export const testPlans: TestPlan[] = [
   {
     id: "weekly",
-    name: "AfterLine Premium — 7-Day Pass",
+    name: "aiorder-afterline Premium — 7-Day Pass",
     description: "One payment for 7 days of Premium access. No automatic renewal.",
     priceLabel: "$12.90 one time",
     unitAmount: 1290,
@@ -32,7 +32,7 @@ export const testPlans: TestPlan[] = [
   },
   {
     id: "monthly",
-    name: "AfterLine Premium — Monthly",
+    name: "aiorder-afterline Premium — Monthly",
     description: "Full premium access with monthly renewal.",
     priceLabel: "$19.90 / month",
     unitAmount: 1990,
@@ -50,7 +50,7 @@ export const testPlans: TestPlan[] = [
   },
   {
     id: "annual",
-    name: "AfterLine Premium — Annual",
+    name: "aiorder-afterline Premium — Annual",
     description: "A year of premium access at the best available rate.",
     priceLabel: "$99.90 / year",
     unitAmount: 9990,

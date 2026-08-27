@@ -68,7 +68,7 @@ export async function POST(req: Request) {
             unit_amount: plan.unitAmount,
             recurring: { interval: "month" },
             product_data: {
-              name: `aiorderafterline — ${plan.name}`,
+              name: `aiorder-afterline — ${plan.name}`,
               description: plan.description,
             },
           },
