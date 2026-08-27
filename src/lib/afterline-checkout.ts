@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getStripeClient, getStripeTestClient } from "@/lib/stripe";
-import { getBillingMode, getSupabaseAdminClient } from "@/lib/membership";
-import { getTestPlan } from "@/lib/test-plans";
+import {
+  getBillingMode,
+  getSupabaseAdminClient,
+  type BillingMode,
+} from "@/lib/membership";
+import { getTestPlan, type TestPlanId } from "@/lib/test-plans";
 
 const allowedOrigins = new Set([
   "https://afterline.ai",
@@ -73,6 +77,11 @@ function getPaymentCancelUrl(returnUrl: string | undefined, appUrl: string) {
   }
 
   return `${appUrl}/cancel`;
+}
+
+function getStripePriceId(planId: TestPlanId, billingMode: BillingMode) {
+  const mode = billingMode === "production" ? "LIVE" : "TEST";
+  return process.env[`STRIPE_PRICE_${planId.toUpperCase()}_${mode}`]?.trim() || null;
 }
 
 async function getUserIdFromAccessToken(accessToken: string | undefined) {
@@ -209,6 +218,7 @@ export async function createAfterLineCheckout(
   const description = options.requireTestKey || billingMode === "test"
     ? `${plan.description} Stripe test checkout only.`
     : plan.description;
+  const stripePriceId = getStripePriceId(plan.id, billingMode);
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -222,16 +232,20 @@ export async function createAfterLineCheckout(
       line_items: [
         {
           quantity: 1,
-          price_data: {
-            currency: "usd",
-            unit_amount: plan.unitAmount,
-            tax_behavior: plan.taxMode,
-            ...(recurring ? { recurring } : {}),
-            product_data: {
-              name: plan.name,
-              description,
-            },
-          },
+          ...(stripePriceId
+            ? { price: stripePriceId }
+            : {
+                price_data: {
+                  currency: "usd",
+                  unit_amount: plan.unitAmount,
+                  tax_behavior: plan.taxMode,
+                  ...(recurring ? { recurring } : {}),
+                  product_data: {
+                    name: plan.name,
+                    description,
+                  },
+                },
+              }),
         },
       ],
       ...(isOneTime
