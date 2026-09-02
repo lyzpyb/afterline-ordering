@@ -1,4 +1,4 @@
-export type TestPlanId = "weekly" | "monthly" | "annual";
+export type TestPlanId = "weekly" | "weekly_discount" | "monthly" | "annual";
 
 export type TestPlan = {
   id: TestPlanId;
@@ -16,13 +16,29 @@ export type TestPlan = {
 export const testPlans: TestPlan[] = [
   {
     id: "weekly",
-    name: "aiorder-afterline Premium — 7-Day Pass",
+    name: "aiorder Premium — 7-Day Pass",
     description: "One payment for 7 days of Premium access. No automatic renewal.",
-    priceLabel: "$12.90 one time",
-    unitAmount: 1290,
+    priceLabel: "MX$60 one time",
+    unitAmount: 6000,
     interval: "once",
     taxMode: "exclusive",
-    creditGrant: 2000,
+    creditGrant: 500,
+    features: [
+      "200 included story turns per day",
+      "2 lifetime ASMR generations free",
+      "Premium interactive story access",
+      "Cross-device story and watch progress",
+    ],
+  },
+  {
+    id: "weekly_discount",
+    name: "aiorder Premium — 7-Day Pass",
+    description: "One payment for 7 days of Premium access. No automatic renewal.",
+    priceLabel: "MX$43 one time",
+    unitAmount: 4300,
+    interval: "once",
+    taxMode: "exclusive",
+    creditGrant: 500,
     features: [
       "200 included story turns per day",
       "2 lifetime ASMR generations free",
@@ -32,13 +48,13 @@ export const testPlans: TestPlan[] = [
   },
   {
     id: "monthly",
-    name: "aiorder-afterline Premium — Monthly",
+    name: "aiorder Premium — Monthly",
     description: "Full premium access with monthly renewal.",
-    priceLabel: "$19.90 / month",
-    unitAmount: 1990,
+    priceLabel: "MX$110 / month",
+    unitAmount: 11000,
     interval: "month",
     taxMode: "exclusive",
-    creditGrant: 3500,
+    creditGrant: 1150,
     features: [
       "200 included story turns per day",
       "2 lifetime ASMR generations free",
@@ -50,13 +66,13 @@ export const testPlans: TestPlan[] = [
   },
   {
     id: "annual",
-    name: "aiorder-afterline Premium — Annual",
+    name: "aiorder Premium — Annual",
     description: "A year of premium access at the best available rate.",
-    priceLabel: "$99.90 / year",
-    unitAmount: 9990,
+    priceLabel: "MX$425 / year",
+    unitAmount: 42500,
     interval: "year",
     taxMode: "inclusive",
-    creditGrant: 20000,
+    creditGrant: 5000,
     features: [
       "200 included story turns per day",
       "2 lifetime ASMR generations free",

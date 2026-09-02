@@ -14,8 +14,8 @@ export const PREMIUM_ENTITLEMENT = "premium_story_access";
 type PlanId = "weekly" | "monthly" | "annual";
 
 const CREDIT_GRANTS: Record<Exclude<PlanId, "weekly">, number> = {
-  monthly: 3500,
-  annual: 20000,
+  monthly: 1150,
+  annual: 5000,
 };
 
 const PRODUCT_IDS: Record<BillingMode, Record<Exclude<PlanId, "weekly">, string>> = {
@@ -24,8 +24,8 @@ const PRODUCT_IDS: Record<BillingMode, Record<Exclude<PlanId, "weekly">, string>
     annual: "stripe-test-annual",
   },
   production: {
-    monthly: "stripe-aiorder-monthly",
-    annual: "stripe-aiorder-annual",
+    monthly: "prod_V9GWYStCxTJOJn",
+    annual: "prod_V9GWjFtdaTIAbW",
   },
 };
 
@@ -306,7 +306,7 @@ export async function grantWeeklyAccessPass(options: {
 
   await grantCredits(supabase, {
     userId: options.userId,
-    amount: 2000,
+    amount: 500,
     source: "access_pass",
     expiresAt: expiresAt.toISOString(),
     idempotencyKey: `stripe-pass:${options.paymentIntentId ?? options.sessionId}`,
@@ -367,9 +367,9 @@ export async function grantSubscriptionAccess(options: {
       current_period_end_at: periodEnd,
       canceled_at: null,
       last_event_created_at: options.eventCreatedAt,
-      market_code: "US",
+      market_code: "MX",
       variant_key: "base",
-      offer_key: `us_base_${options.planId}_v2`,
+      offer_key: `mx_base_${options.planId}_v1`,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "creem_subscription_id,mode" },

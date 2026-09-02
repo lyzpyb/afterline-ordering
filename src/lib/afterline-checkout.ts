@@ -236,7 +236,7 @@ export async function createAfterLineCheckout(
             ? { price: stripePriceId }
             : {
                 price_data: {
-                  currency: "usd",
+                  currency: "mxn",
                   unit_amount: plan.unitAmount,
                   tax_behavior: plan.taxMode,
                   ...(recurring ? { recurring } : {}),
@@ -249,7 +249,7 @@ export async function createAfterLineCheckout(
         },
       ],
       ...(isOneTime
-        ? { payment_intent_data: { metadata } }
+        ? { payment_intent_data: { metadata, statement_descriptor: "AIORDER" } }
         : { subscription_data: { metadata } }),
       metadata,
       success_url: successUrl,
