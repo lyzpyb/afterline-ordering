@@ -75,7 +75,10 @@ export default function StripeTestPage() {
                   Most popular
                 </span>
               )}
-              <h2 className="text-lg font-semibold text-zinc-900">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                {plan.marketCode} market
+              </p>
+              <h2 className="mt-1 text-lg font-semibold text-zinc-900">
                 {plan.name}
               </h2>
               <p className="mt-2 text-sm leading-6 text-zinc-600">

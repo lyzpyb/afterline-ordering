@@ -28,7 +28,7 @@ function isAllowedReturnUrl(returnUrl: string) {
   try {
     const parsed = new URL(returnUrl);
     const isLocalHttp = parsed.protocol === "http:" && parsed.host === "localhost:5173";
-    return (parsed.protocol === "https://" || isLocalHttp)
+    return (parsed.protocol === "https:" || isLocalHttp)
       && allowedOrigins.has(parsed.origin);
   } catch {
     return false;

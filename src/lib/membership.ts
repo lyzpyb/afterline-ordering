@@ -1,4 +1,10 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import {
+  getSubscriptionPlan,
+  getTestPlan,
+  type SubscriptionPlan,
+  type TestPlanId,
+} from "@/lib/test-plans";
 
 export type BillingMode = "test" | "production";
 
@@ -11,14 +17,14 @@ export function getBillingMode(): BillingMode {
 export const BILLING_MODE = getBillingMode();
 export const PREMIUM_ENTITLEMENT = "premium_story_access";
 
-type PlanId = "weekly" | "monthly" | "annual";
+const ACCESS_PASS_DAYS = 7;
+// Sessions created before plans carried their own credit grant (or without a
+// recognisable plan in metadata) keep the original flat pass grant.
+const LEGACY_ACCESS_PASS_CREDITS = 500;
 
-const CREDIT_GRANTS: Record<Exclude<PlanId, "weekly">, number> = {
-  monthly: 1150,
-  annual: 5000,
-};
-
-const PRODUCT_IDS: Record<BillingMode, Record<Exclude<PlanId, "weekly">, string>> = {
+// Known product ids for the original MX subscriptions. Other plans read
+// STRIPE_PRODUCT_<PLANID>_<LIVE|TEST>.
+const PRODUCT_IDS: Record<BillingMode, Partial<Record<TestPlanId, string>>> = {
   test: {
     monthly: "stripe-test-monthly",
     annual: "stripe-test-annual",
@@ -28,6 +34,31 @@ const PRODUCT_IDS: Record<BillingMode, Record<Exclude<PlanId, "weekly">, string>
     annual: "prod_V9GWjFtdaTIAbW",
   },
 };
+
+export function getStripeProductId(
+  planId: TestPlanId,
+  billingMode: BillingMode = BILLING_MODE,
+) {
+  const known = PRODUCT_IDS[billingMode][planId];
+
+  if (known) {
+    return known;
+  }
+
+  const mode = billingMode === "production" ? "LIVE" : "TEST";
+  return process.env[`STRIPE_PRODUCT_${planId.toUpperCase()}_${mode}`]?.trim() || null;
+}
+
+// billing_subscriptions.creem_product_id is NOT NULL: prefer the configured id,
+// then the product on the Stripe subscription item, then a readable placeholder.
+function subscriptionProductId(
+  plan: SubscriptionPlan,
+  stripeProductId: string | null | undefined,
+) {
+  return getStripeProductId(plan.id)
+    ?? stripeProductId
+    ?? `stripe-${BILLING_MODE === "production" ? "live" : "test"}-${plan.id}`;
+}
 
 let cachedClient: SupabaseClient | null = null;
 
@@ -279,12 +310,23 @@ export async function grantWeeklyAccessPass(options: {
   sessionId: string;
   paymentIntentId: string | null;
   email: string | null;
+  planId?: string | null;
   payload: unknown;
 }) {
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
     throw new Error("Supabase is not configured.");
+  }
+
+  const purchasedPlan = getTestPlan(options.planId ?? "");
+  const plan = purchasedPlan?.interval === "once" ? purchasedPlan : null;
+
+  if (!plan) {
+    console.warn("Stripe access pass has no known pass plan; using the legacy grant", {
+      sessionId: options.sessionId,
+      plan: options.planId ?? null,
+    });
   }
 
   await recordEvent(
@@ -296,7 +338,7 @@ export async function grantWeeklyAccessPass(options: {
   );
 
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(now.getTime() + ACCESS_PASS_DAYS * 24 * 60 * 60 * 1000);
 
   await activateEntitlement(supabase, {
     userId: options.userId,
@@ -306,7 +348,7 @@ export async function grantWeeklyAccessPass(options: {
 
   await grantCredits(supabase, {
     userId: options.userId,
-    amount: 500,
+    amount: plan?.creditGrant ?? LEGACY_ACCESS_PASS_CREDITS,
     source: "access_pass",
     expiresAt: expiresAt.toISOString(),
     idempotencyKey: `stripe-pass:${options.paymentIntentId ?? options.sessionId}`,
@@ -315,6 +357,14 @@ export async function grantWeeklyAccessPass(options: {
       provider: "stripe",
       checkout_session_id: options.sessionId,
       email: options.email,
+      ...(plan
+        ? {
+            plan: plan.id,
+            plan_key: plan.planKey,
+            offer_key: plan.offerKey,
+            market_code: plan.marketCode,
+          }
+        : {}),
     },
   });
 }
@@ -326,7 +376,8 @@ export async function grantSubscriptionAccess(options: {
   email: string | null;
   customerId: string;
   subscriptionId: string;
-  planId: Exclude<PlanId, "weekly">;
+  planId: TestPlanId;
+  stripeProductId?: string | null;
   periodStartAt: number | null;
   periodEndAt: number | null;
   payload: unknown;
@@ -335,6 +386,12 @@ export async function grantSubscriptionAccess(options: {
 
   if (!supabase) {
     throw new Error("Supabase is not configured.");
+  }
+
+  const plan = getSubscriptionPlan(options.planId);
+
+  if (!plan) {
+    throw new Error(`Unknown subscription plan: ${options.planId}`);
   }
 
   await recordEvent(
@@ -360,16 +417,16 @@ export async function grantSubscriptionAccess(options: {
       user_id: options.userId,
       creem_customer_id: effectiveCustomerId,
       mode: BILLING_MODE,
-      creem_product_id: PRODUCT_IDS[BILLING_MODE][options.planId],
-      plan_key: options.planId,
+      creem_product_id: subscriptionProductId(plan, options.stripeProductId),
+      plan_key: plan.planKey,
       status: "active",
       current_period_start_at: periodStart,
       current_period_end_at: periodEnd,
       canceled_at: null,
       last_event_created_at: options.eventCreatedAt,
-      market_code: "MX",
-      variant_key: "base",
-      offer_key: `mx_base_${options.planId}_v1`,
+      market_code: plan.marketCode,
+      variant_key: plan.variantKey,
+      offer_key: plan.offerKey,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "creem_subscription_id,mode" },
@@ -387,7 +444,7 @@ export async function grantSubscriptionAccess(options: {
 
   await grantCredits(supabase, {
     userId: options.userId,
-    amount: CREDIT_GRANTS[options.planId],
+    amount: plan.creditGrant,
     source: "subscription",
     expiresAt: periodEnd,
     idempotencyKey: `subscription:${options.subscriptionId}:${options.periodStartAt ?? 0}`,
@@ -396,6 +453,10 @@ export async function grantSubscriptionAccess(options: {
     metadata: {
       provider: "stripe",
       checkout_event_id: options.eventId,
+      plan: plan.id,
+      plan_key: plan.planKey,
+      offer_key: plan.offerKey,
+      market_code: plan.marketCode,
     },
   });
 }
@@ -407,7 +468,8 @@ export async function extendSubscriptionAccess(options: {
   email: string | null;
   customerId: string;
   subscriptionId: string;
-  planId: Exclude<PlanId, "weekly">;
+  planId: TestPlanId;
+  stripeProductId?: string | null;
   periodStartAt: number | null;
   periodEndAt: number | null;
   payload: unknown;
@@ -421,6 +483,8 @@ export async function revokeSubscriptionAccess(options: {
   eventCreatedAt: number;
   customerId: string;
   subscriptionId: string;
+  planId?: string | null;
+  stripeProductId?: string | null;
   payload: unknown;
 }) {
   const supabase = getSupabaseAdminClient();
@@ -443,6 +507,22 @@ export async function revokeSubscriptionAccess(options: {
     null,
   );
 
+  const { data: stored, error: storedError } = await supabase
+    .from("billing_subscriptions")
+    .select("creem_product_id,plan_key,market_code,variant_key,offer_key")
+    .eq("creem_subscription_id", options.subscriptionId)
+    .eq("mode", BILLING_MODE)
+    .maybeSingle();
+
+  if (storedError) {
+    throw new Error(`Could not load the subscription: ${storedError.message}`);
+  }
+
+  // Keep what the subscription was saved with; otherwise describe it from the
+  // plan in the Stripe metadata. The generic values are a last resort only.
+  const plan = getSubscriptionPlan(options.planId ?? "");
+  const offerKey = stored?.offer_key ?? plan?.offerKey ?? null;
+
   const now = new Date().toISOString();
 
   const { error: subscriptionError } = await supabase
@@ -453,15 +533,19 @@ export async function revokeSubscriptionAccess(options: {
         user_id: options.userId,
         creem_customer_id: effectiveCustomerId,
         mode: BILLING_MODE,
-        creem_product_id: BILLING_MODE === "production"
-          ? "stripe-aiorder-unknown"
-          : "stripe-test-unknown",
-        plan_key: "monthly",
+        creem_product_id: stored?.creem_product_id
+          ?? (plan ? subscriptionProductId(plan, options.stripeProductId) : null)
+          ?? options.stripeProductId
+          ?? (BILLING_MODE === "production"
+            ? "stripe-aiorder-unknown"
+            : "stripe-test-unknown"),
+        plan_key: stored?.plan_key ?? plan?.planKey ?? "monthly",
         status: "canceled",
         canceled_at: now,
         last_event_created_at: options.eventCreatedAt,
-        market_code: "US",
-        variant_key: "base",
+        market_code: stored?.market_code ?? plan?.marketCode ?? "US",
+        variant_key: stored?.variant_key ?? plan?.variantKey ?? "base",
+        ...(offerKey ? { offer_key: offerKey } : {}),
         updated_at: now,
       },
       { onConflict: "creem_subscription_id,mode" },
