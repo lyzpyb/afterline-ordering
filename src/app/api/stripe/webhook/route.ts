@@ -11,9 +11,11 @@ import {
   resolveUserById,
   revokeSubscriptionAccess,
 } from "@/lib/membership";
+import { getSubscriptionPlan, type TestPlanId } from "@/lib/test-plans";
 
-function isSubscriptionPlan(plan: string | undefined): plan is "monthly" | "annual" {
-  return plan === "monthly" || plan === "annual";
+// Any known plan that renews (monthly or annual, in any market).
+function isSubscriptionPlan(plan: string | undefined): plan is TestPlanId {
+  return Boolean(getSubscriptionPlan(plan ?? ""));
 }
 
 function stripeIdFrom(value: string | { id: string } | null | undefined) {
@@ -131,6 +133,7 @@ export async function POST(req: Request) {
           sessionId: session.id,
           paymentIntentId: stripeIdFrom(session.payment_intent),
           email,
+          planId: session.metadata?.plan ?? null,
           payload: event.data.object,
         });
         break;
@@ -162,6 +165,7 @@ export async function POST(req: Request) {
         customerId,
         subscriptionId,
         planId: session.metadata.plan,
+        stripeProductId: stripeIdFrom(period?.price?.product),
         periodStartAt: period?.current_period_start ?? null,
         periodEndAt: period?.current_period_end ?? null,
         payload: event.data.object,
@@ -207,6 +211,7 @@ export async function POST(req: Request) {
         customerId,
         subscriptionId,
         planId: plan,
+        stripeProductId: stripeIdFrom(period?.price?.product),
         periodStartAt: period?.current_period_start ?? invoice.period_start ?? null,
         periodEndAt: period?.current_period_end ?? invoice.period_end ?? null,
         payload: event.data.object,
@@ -234,6 +239,8 @@ export async function POST(req: Request) {
         eventCreatedAt: event.created,
         customerId,
         subscriptionId: subscription.id,
+        planId: subscription.metadata?.plan ?? null,
+        stripeProductId: stripeIdFrom(subscription.items?.data[0]?.price?.product),
         payload: event.data.object,
       });
       break;
